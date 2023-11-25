@@ -14,6 +14,8 @@ import (
 var ScreenWidth int = 320
 var ScreenHeight int = 240
 
+var PlayerWidth float64 = 16
+
 type Player struct {
 	X         float64
 	Y         float64
@@ -21,13 +23,27 @@ type Player struct {
 	JumpCount int
 }
 
+var RectangleWidth float64 = 32
+
 type Rectangle struct {
-	X int
-	Y int
+	X float64
+	Y float64
 }
 
 func (r Rectangle) IsOutOfScreen() bool {
-	return r.Y > ScreenHeight
+	return r.Y > float64(ScreenHeight)
+}
+
+func (r Rectangle) IsPlayerOnTop(p Player) bool {
+	rl := p.X - PlayerWidth/2
+	rr := p.X + PlayerWidth/2
+	return (r.X-RectangleWidth/2 <= rl && rl <= r.X+RectangleWidth/2 || r.X-RectangleWidth/2 <= rr && rr <= r.X+RectangleWidth/2) && r.Y-RectangleWidth/2 <= p.Y+PlayerWidth/2 && p.Y+PlayerWidth/2 <= r.Y
+}
+
+func (r Rectangle) IsPlayerOnBottom(p Player) bool {
+	rl := p.X - PlayerWidth/2
+	rr := p.X + PlayerWidth/2
+	return (r.X-RectangleWidth/2 <= rl && rl <= r.X+RectangleWidth/2 || r.X-RectangleWidth/2 <= rr && rr <= r.X+RectangleWidth/2) && p.X-PlayerWidth/2 <= r.X+RectangleWidth/2 && r.Y <= p.Y-PlayerWidth/2 && p.Y-PlayerWidth/2 <= r.Y+RectangleWidth/2
 }
 
 var PlayerImage *ebiten.Image
@@ -42,10 +58,10 @@ type Game struct {
 }
 
 func init() {
-	PlayerImage = ebiten.NewImage(16, 16)
+	PlayerImage = ebiten.NewImage(int(PlayerWidth), int(PlayerWidth))
 	PlayerImage.Fill(color.RGBA{0xff, 0x0, 0xff, 0xff})
 
-	RectangleImage = ebiten.NewImage(32, 32)
+	RectangleImage = ebiten.NewImage(int(RectangleWidth), int(RectangleWidth))
 	RectangleImage.Fill(color.RGBA{0xff, 0xff, 0xff, 0xff})
 }
 
@@ -91,7 +107,7 @@ func (g *Game) Update() error {
 	}
 
 	if len(g.Rectangles) < 10 && g.Counter%30 == 0 {
-		x := rand.Intn(ScreenWidth)
+		x := float64(rand.Intn(ScreenWidth))
 
 		g.Rectangles = append(g.Rectangles, Rectangle{
 			X: x,
@@ -101,13 +117,24 @@ func (g *Game) Update() error {
 
 	remove := []int{}
 	for i, r := range g.Rectangles {
+		rv := 2
+		if g.Counter > 200 {
+			rv = 0
+		}
+
 		g.Rectangles[i] = Rectangle{
 			X: r.X,
-			Y: r.Y + 2,
+			Y: r.Y + float64(rv),
 		}
 
 		if g.Rectangles[i].IsOutOfScreen() {
 			remove = append(remove, i)
+		}
+
+		if g.Rectangles[i].IsPlayerOnTop(g.Player) {
+			g.Player.Y = r.Y - RectangleWidth/2 - PlayerWidth/2
+		} else if g.Rectangles[i].IsPlayerOnBottom(g.Player) {
+			g.Player.Y = r.Y + RectangleWidth/2 + PlayerWidth/2
 		}
 	}
 
@@ -137,13 +164,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("Y=%v Vy=%v", g.Player.Y, g.Player.Vy))
 
 	option := ebiten.DrawImageOptions{}
-	option.GeoM.Translate(g.Player.X, g.Player.Y)
+	option.GeoM.Translate(g.Player.X-PlayerWidth/2, g.Player.Y-PlayerWidth/2)
 
 	screen.DrawImage(PlayerImage, &option)
 
 	for _, r := range g.Rectangles {
 		option.GeoM.Reset()
-		option.GeoM.Translate(float64(r.X), float64(r.Y))
+		option.GeoM.Translate(float64(r.X)-RectangleWidth/2, float64(r.Y)-RectangleWidth/2)
 
 		screen.DrawImage(RectangleImage, &option)
 	}
