@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -10,8 +11,9 @@ import (
 )
 
 type Player struct {
-	X float64
-	Y float64
+	X  float64
+	Y  float64
+	Vy float64
 }
 
 var PlayerImage *ebiten.Image
@@ -37,19 +39,36 @@ func (g *Game) Update() error {
 	} else {
 		g.KeysPressing[ebiten.KeyRight] = 0
 	}
+	if ebiten.IsKeyPressed(ebiten.KeyUp) {
+		g.KeysPressing[ebiten.KeyUp]++
+	} else {
+		g.KeysPressing[ebiten.KeyUp] = 0
+	}
 
 	if g.KeysPressing[ebiten.KeyLeft] > 0 {
-		g.Player.X -= 5 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyLeft])/5)
+		g.Player.X -= 4 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyLeft])/4)
 	}
 	if g.KeysPressing[ebiten.KeyRight] > 0 {
-		g.Player.X += 5 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyRight])/5)
+		g.Player.X += 4 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyRight])/4)
+	}
+	if g.KeysPressing[ebiten.KeyUp] == 1 {
+		g.Player.Vy = -10
+	}
+
+	if g.Player.Y < 120 {
+		g.Player.Vy += 0.85
+	}
+
+	g.Player.Y += g.Player.Vy
+	if g.Player.Y > 120 {
+		g.Player.Y = 120
 	}
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("Y=%v Vy=%v", g.Player.Y, g.Player.Vy))
 
 	option := ebiten.DrawImageOptions{}
 	option.GeoM.Translate(g.Player.X, g.Player.Y)
@@ -66,8 +85,9 @@ func main() {
 	ebiten.SetWindowTitle("Hello, World!")
 	if err := ebiten.RunGame(&Game{
 		Player: Player{
-			X: 160,
-			Y: 120,
+			X:  160,
+			Y:  120,
+			Vy: 0,
 		},
 		KeysPressing: make(map[ebiten.Key]int),
 	}); err != nil {
