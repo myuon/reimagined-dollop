@@ -11,9 +11,10 @@ import (
 )
 
 type Player struct {
-	X  float64
-	Y  float64
-	Vy float64
+	X         float64
+	Y         float64
+	Vy        float64
+	JumpCount int
 }
 
 var PlayerImage *ebiten.Image
@@ -52,8 +53,9 @@ func (g *Game) Update() error {
 	if g.KeysPressing[ebiten.KeyRight] > 0 {
 		g.Player.X += 4 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyRight])/4)
 	}
-	if g.KeysPressing[ebiten.KeyUp] == 1 {
+	if g.KeysPressing[ebiten.KeyUp] == 1 && g.Player.JumpCount < 2 {
 		g.Player.Vy = -12
+		g.Player.JumpCount++
 	}
 
 	if g.Player.Y < FloorY {
@@ -63,6 +65,8 @@ func (g *Game) Update() error {
 	g.Player.Y += g.Player.Vy
 	if g.Player.Y > FloorY {
 		g.Player.Y = FloorY
+		g.Player.Vy = 0
+		g.Player.JumpCount = 0
 	}
 
 	return nil
@@ -86,9 +90,10 @@ func main() {
 	ebiten.SetWindowTitle("Hello, World!")
 	if err := ebiten.RunGame(&Game{
 		Player: Player{
-			X:  160,
-			Y:  FloorY,
-			Vy: 0,
+			X:         160,
+			Y:         FloorY,
+			Vy:        0,
+			JumpCount: 0,
 		},
 		KeysPressing: make(map[ebiten.Key]int),
 	}); err != nil {
