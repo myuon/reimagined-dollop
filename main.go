@@ -17,6 +17,7 @@ type Player struct {
 }
 
 var PlayerImage *ebiten.Image
+var FloorY float64 = 220
 
 type Game struct {
 	Player       Player
@@ -52,16 +53,16 @@ func (g *Game) Update() error {
 		g.Player.X += 4 * app.EaseOutSine(float64(g.KeysPressing[ebiten.KeyRight])/4)
 	}
 	if g.KeysPressing[ebiten.KeyUp] == 1 {
-		g.Player.Vy = -10
+		g.Player.Vy = -12
 	}
 
-	if g.Player.Y < 120 {
+	if g.Player.Y < FloorY {
 		g.Player.Vy += 0.85
 	}
 
 	g.Player.Y += g.Player.Vy
-	if g.Player.Y > 120 {
-		g.Player.Y = 120
+	if g.Player.Y > FloorY {
+		g.Player.Y = FloorY
 	}
 
 	return nil
@@ -86,7 +87,7 @@ func main() {
 	if err := ebiten.RunGame(&Game{
 		Player: Player{
 			X:  160,
-			Y:  120,
+			Y:  FloorY,
 			Vy: 0,
 		},
 		KeysPressing: make(map[ebiten.Key]int),
