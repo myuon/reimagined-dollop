@@ -118,10 +118,6 @@ func (g *Game) Update() error {
 	remove := []int{}
 	for i, r := range g.Rectangles {
 		rv := 2
-		if g.Counter > 200 {
-			rv = 0
-		}
-
 		g.Rectangles[i] = Rectangle{
 			X: r.X,
 			Y: r.Y + float64(rv),
@@ -133,6 +129,8 @@ func (g *Game) Update() error {
 
 		if g.Rectangles[i].IsPlayerOnTop(g.Player) {
 			g.Player.Y = r.Y - RectangleWidth/2 - PlayerWidth/2
+			g.Player.Vy = 0
+			g.Player.JumpCount = 0
 		} else if g.Rectangles[i].IsPlayerOnBottom(g.Player) {
 			g.Player.Y = r.Y + RectangleWidth/2 + PlayerWidth/2
 		}
